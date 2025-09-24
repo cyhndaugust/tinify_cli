@@ -3,7 +3,7 @@ use reqwest::header::{
     ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONNECTION, CONTENT_TYPE, HeaderMap, HeaderValue,
     USER_AGENT,
 };
-use std::{collections::HashMap, env, fs};
+use std::{env, fs};
 use text_colorizer::Colorize;
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ pub fn parse_args() -> Arguments {
 }
 
 /// 使用提示
-pub fn print_usage() {
+fn print_usage() {
     eprintln!("{} 压缩当前目录所有图片...", "tinify_cli".green());
     eprintln!("使用方式：tinify_cli <TINIFY KEY>");
 }
@@ -36,9 +36,6 @@ pub fn print_usage() {
 pub fn get_request(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
     let authorization = get_authorization(tkey);
     // eprintln!("authorization: {authorization}");
-    let mut map = HashMap::new();
-    map.insert("lang", "rust");
-    map.insert("body", "json");
 
     // headers
     let mut headers = HeaderMap::new();

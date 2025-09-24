@@ -7,6 +7,6 @@ fn main() {
     // eprintln!("参数key：{}", args.tkey.yellow());
 
     if let Err(e) = get_request(&args.tkey) {
-        eprintln!("请求失败: {}", e);
+        eprintln!("压缩失败: {}", e);
     }
 }
