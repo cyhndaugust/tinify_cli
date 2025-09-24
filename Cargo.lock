@@ -1229,6 +1229,7 @@ name = "tinify_cli"
 version = "0.1.0"
 dependencies = [
  "reqwest",
+ "serde_json",
  "text-colorizer",
 ]
 
