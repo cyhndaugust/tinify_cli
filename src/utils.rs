@@ -10,7 +10,15 @@ use std::path::PathBuf;
 use std::{env, fs};
 use text_colorizer::Colorize;
 
-/// 解析参数
+/// 解析命令行参数并返回要使用的 Tinify Key
+///
+/// 解析规则：
+/// - 如果第一个参数是 "set"，则把第二个参数作为 KEY 保存到本地并退出程序（用于持久化 KEY）
+/// - 如果提供了第一个参数且不是 "set"，则把该参数当作临时 KEY 返回
+/// - 否则尝试读取已保存的 KEY；若不存在则打印使用说明并退出程序（返回值不会发生）
+///
+/// 返回值：
+/// 成功时返回要使用的 Key 字符串；在处理 "set" 或错误情形时会直接退出程序。
 pub fn parse_args() -> String {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -54,7 +62,7 @@ pub fn parse_args() -> String {
     }
 }
 
-/// 使用提示
+/// 打印程序使用说明到标准错误
 fn print_usage() {
     eprintln!("{} 压缩当前目录所有图片...", "tinify_cli".green());
     eprintln!("使用方式：");
@@ -63,7 +71,9 @@ fn print_usage() {
     eprintln!("  tinifycli                     # 使用已保存的 KEY");
 }
 
-/// config 目录和 key 文件路径
+/// 返回配置目录路径（通常是 ~/.tinifycli）
+///
+/// 若无法获取 HOME 环境变量，则退回到当前目录下的 .tinifycli（极少发生）。
 fn config_dir() -> PathBuf {
     if let Ok(home) = env::var("HOME") {
         let mut p = PathBuf::from(home);
@@ -83,7 +93,9 @@ fn key_file() -> PathBuf {
     p
 }
 
-/// 保存 KEY，设置权限为 600（Unix）
+/// 将 KEY 保存到配置文件中，并在 Unix 系统上将权限设置为 600（仅文件所有者可读写）
+///
+/// 返回 Result：Ok(()) 表示保存成功，Err 表示出现 I/O 等错误。
 fn save_key(key: &str) -> Result<(), Box<dyn std::error::Error>> {
     let dir = config_dir();
     if !dir.exists() {
@@ -100,7 +112,9 @@ fn save_key(key: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// 读取已保存的 KEY
+/// 读取已保存的 KEY 并返回字符串
+///
+/// 如果文件不存在或读取失败，返回 Err 包装的错误。
 fn read_key() -> Result<String, Box<dyn std::error::Error>> {
     let kf = key_file();
     match fs::read_to_string(&kf) {
@@ -115,7 +129,14 @@ fn read_key() -> Result<String, Box<dyn std::error::Error>> {
     }
 }
 
-/// 发送请求
+/// 对当前目录下的图片逐个调用 Tinify API 进行压缩
+///
+/// 行为说明：
+/// - 仅在当前目录（非递归）查找常见图片扩展名文件（png/jpg/jpeg/gif/webp/bmp）
+/// - 对每个图片先上传到 https://api.tinify.com/shrink，然后从返回的 output.url 下载压缩后的数据
+/// - 将压缩后的文件保存为 compressed_<原文件名>，并在 stderr 输出结果和压缩比
+///
+/// 返回 Result：Ok(()) 表示全部处理完毕；遇到网络或 I/O 错误会返回 Err。
 pub fn get_request(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
     let authorization = get_authorization(tkey);
     // eprintln!("authorization: {authorization}");
@@ -196,7 +217,9 @@ pub fn get_request(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Authorization
+/// 根据给定的 Tinify Key 构造 HTTP Basic Authorization 头值
+///
+/// 返回形如 "Basic <base64(api:KEY)>" 的字符串。
 fn get_authorization(key: &str) -> String {
     let user = "api";
     let auth_str = format!("{}:{}", user, key);
