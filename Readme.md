@@ -1,4 +1,4 @@
-# Tinify 图片压缩命令行客户端
+# Tinify CLI
 
 
 仅支持 macOS
