@@ -176,7 +176,7 @@ pub fn compressed_images(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or("<unknown>");
-        eprintln!("图片 {} 正在压缩...", fname);
+        eprintln!("{} 正在压缩...", fname);
 
         // 读取文件字节并作为请求 body 上传
         let bytes = fs::read(&path)?;
@@ -198,7 +198,7 @@ pub fn compressed_images(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
                             let compressed_fname = format!("compressed_{}", fname);
                             fs::write(&compressed_fname, &compressed_bytes)?;
                             eprintln!(
-                                "输出: {} （{} bytes） 原始: {} bytes，压缩比: {:.2}%",
+                                "Success: {} （{}/{} bytes），压缩比: {:.2}%",
                                 compressed_fname.green(),
                                 compressed_size.to_string().green(),
                                 orig_size,
