@@ -1,0 +1,9 @@
+# Tinify 图片压缩客户端
+
+## 使用方式
+仅支持macOS
+
+### v0.1
+tinify_cli <TINIFY API_KEY>
+
+TINIFY API_KEY获取方式 https://tinify.cn/developers

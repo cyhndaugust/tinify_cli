@@ -3,6 +3,7 @@ name = "tinify_cli"
 version = "0.1.0"
 edition = "2024"
 
+
 [dependencies]
 reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
 text-colorizer = "1.0.0"
@@ -16,3 +17,7 @@ codegen-units = 1       # 减少碎片化以利于 LTO
 panic = "abort"         # 去掉 unwinding 相关开销
 debug = 0               # 移除 release 符号表
 split-debuginfo = "off" # 不生成分离的调试信息
+
+[[bin]]
+name = "tinifycli"   # 这里填你想要的可执行文件名
+path = "src/main.rs"
