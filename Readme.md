@@ -11,7 +11,7 @@ mkdir -p ~/.tinifycli && curl -L -o ~/.tinifycli/tinifycli "<URL>" && chmod 755 
 
 ## 设置环境变量
 ```zsh
-echo 'echo 'export PATH="$HOME/.tinifycli:$PATH"' >> ~/.zshrc
+echo 'export PATH="$HOME/.tinifycli:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
