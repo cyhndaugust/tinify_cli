@@ -8,3 +8,11 @@ reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
 text-colorizer = "1.0.0"
 serde_json = "1.0"
 base64 = "0.21"
+
+[profile.release]
+opt-level = "z"         # 优化为减小体积（"z" 或 "s"）
+lto = true              # 链接时做跨crate优化
+codegen-units = 1       # 减少碎片化以利于 LTO
+panic = "abort"         # 去掉 unwinding 相关开销
+debug = 0               # 移除 release 符号表
+split-debuginfo = "off" # 不生成分离的调试信息
