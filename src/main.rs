@@ -1,12 +1,10 @@
 mod utils;
-// use text_colorizer::Colorize;
 use utils::{get_request, parse_args};
 
 fn main() {
-    let args = parse_args();
-    // eprintln!("参数key：{}", args.tkey.yellow());
+    let tkey = parse_args();
 
-    if let Err(e) = get_request(&args.tkey) {
+    if let Err(e) = get_request(&tkey) {
         eprintln!("压缩失败: {}", e);
     }
 }

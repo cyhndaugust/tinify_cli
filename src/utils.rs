@@ -3,33 +3,116 @@ use reqwest::header::{
     ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONNECTION, CONTENT_TYPE, HeaderMap, HeaderValue,
     USER_AGENT,
 };
+use std::io::ErrorKind;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 use std::{env, fs};
 use text_colorizer::Colorize;
 
-#[derive(Debug)]
-pub struct Arguments {
-    pub tkey: String, // Tinify Key
-}
-
 /// 解析参数
-pub fn parse_args() -> Arguments {
+pub fn parse_args() -> String {
     let args: Vec<String> = env::args().skip(1).collect();
 
-    if args.len() == 0 {
-        print_usage();
-        eprintln!("{} 缺少关键参数，Tinify Key", "Error:".red().bold());
-        std::process::exit(1);
+    // 如果是设置命令：tinifycli set <KEY>
+    if args.len() > 0 && args[0] == "set" {
+        if args.len() < 2 {
+            eprintln!("{} 使用: tinifycli set <KEY>", "Error:".red().bold());
+            std::process::exit(1);
+        }
+        let key = args[1].trim();
+        if let Err(e) = save_key(key) {
+            eprintln!("{} 保存 KEY 失败: {}", "Error:".red().bold(), e);
+            std::process::exit(1);
+        }
+        eprintln!(
+            "{} 成功保存 KEY 到 {}",
+            "Ok:".green().bold(),
+            key_file().display()
+        );
+        std::process::exit(0);
     }
 
-    Arguments {
-        tkey: args[0].clone(),
+    // 如果命令行直接传入 KEY，则优先使用
+    if args.len() > 0 {
+        return args[0].clone();
+    }
+
+    // 无参数时尝试读取已保存的 key
+    match read_key() {
+        Ok(k) => k,
+        Err(_) => {
+            print_usage();
+            eprintln!(
+                "{} 缺少关键参数，Tinify Key。可用命令：{} 或 {}",
+                "Error:".red().bold(),
+                "tinifycli set <KEY>".green(),
+                "tinifycli <KEY>".green()
+            );
+            std::process::exit(1);
+        }
     }
 }
 
 /// 使用提示
 fn print_usage() {
     eprintln!("{} 压缩当前目录所有图片...", "tinify_cli".green());
-    eprintln!("使用方式：tinify_cli <TINIFY KEY>");
+    eprintln!("使用方式：");
+    eprintln!("  tinifycli set <TINIFY KEY>    # 保存 KEY 到本地（~/.tinifycli/key）");
+    eprintln!("  tinifycli <TINIFY KEY>        # 本次使用提供的 KEY");
+    eprintln!("  tinifycli                     # 使用已保存的 KEY");
+}
+
+/// config 目录和 key 文件路径
+fn config_dir() -> PathBuf {
+    if let Ok(home) = env::var("HOME") {
+        let mut p = PathBuf::from(home);
+        p.push(".tinifycli");
+        p
+    } else {
+        // 回退到当前目录下的 .tinifycli（极少发生）
+        let mut p = PathBuf::from(".");
+        p.push(".tinifycli");
+        p
+    }
+}
+
+fn key_file() -> PathBuf {
+    let mut p = config_dir();
+    p.push("key");
+    p
+}
+
+/// 保存 KEY，设置权限为 600（Unix）
+fn save_key(key: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let dir = config_dir();
+    if !dir.exists() {
+        fs::create_dir_all(&dir)?;
+    }
+    let kf = key_file();
+    fs::write(&kf, key.as_bytes())?;
+    #[cfg(unix)]
+    {
+        let mut perms = fs::metadata(&kf)?.permissions();
+        perms.set_mode(0o600);
+        fs::set_permissions(&kf, perms)?;
+    }
+    Ok(())
+}
+
+/// 读取已保存的 KEY
+fn read_key() -> Result<String, Box<dyn std::error::Error>> {
+    let kf = key_file();
+    match fs::read_to_string(&kf) {
+        Ok(s) => Ok(s.trim().to_string()),
+        Err(e) => {
+            if e.kind() == ErrorKind::NotFound {
+                Err(Box::new(e))
+            } else {
+                Err(Box::new(e))
+            }
+        }
+    }
 }
 
 /// 发送请求
@@ -83,17 +166,8 @@ pub fn get_request(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
             .body(bytes)
             .send()?;
 
-        // 打印状态、头和响应体（优先 JSON）
-        // eprintln!("{} -> 状态: {}", fname, res.status());
-        // for (k, v) in res.headers().iter() {
-        //     eprintln!("Header: {}: {:?}", k, v);
-        // }
-
         let body = res.text()?;
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
-            // eprintln!("Body (json): {}", serde_json::to_string_pretty(&json)?);
-
-            // 如果有 output.url，则下载并保存为 compressed_<原文件名>
             if let Some(output) = json.get("output") {
                 if let Some(url) = output.get("url").and_then(|v| v.as_str()) {
                     match client.get(url).send() {
