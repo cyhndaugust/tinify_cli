@@ -5,7 +5,7 @@
 
 ## 下载
 ```zsh
-# 注意修改 URL 为最新release版本的地址
+# 注意修改 <URL> 为最新release版本的地址
 mkdir -p ~/.tinifycli && curl -L -o ~/.tinifycli/tinifycli "<URL>" && chmod 755 ~/.tinifycli/tinifycli
 ```
 

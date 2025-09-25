@@ -1,10 +1,10 @@
 mod utils;
-use utils::{get_request, parse_args};
+use utils::{compressed_images, parse_args};
 
 fn main() {
     let tkey = parse_args();
 
-    if let Err(e) = get_request(&tkey) {
+    if let Err(e) = compressed_images(&tkey) {
         eprintln!("压缩失败: {}", e);
     }
 }

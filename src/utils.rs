@@ -137,7 +137,7 @@ fn read_key() -> Result<String, Box<dyn std::error::Error>> {
 /// - 将压缩后的文件保存为 compressed_<原文件名>，并在 stderr 输出结果和压缩比
 ///
 /// 返回 Result：Ok(()) 表示全部处理完毕；遇到网络或 I/O 错误会返回 Err。
-pub fn get_request(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn compressed_images(tkey: &str) -> Result<(), Box<dyn std::error::Error>> {
     let authorization = get_authorization(tkey);
     // eprintln!("authorization: {authorization}");
 
